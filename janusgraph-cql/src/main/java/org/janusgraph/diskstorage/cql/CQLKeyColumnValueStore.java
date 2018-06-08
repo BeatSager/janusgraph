@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.janusgraph.diskstorage.BackendException;
 import org.janusgraph.diskstorage.Entry;
@@ -143,8 +144,9 @@ public class CQLKeyColumnValueStore implements KeyColumnValueStore {
      * @param tableName the name of the database table for storing the key/column/values
      * @param configuration data used in creating this store
      * @param closer callback used to clean up references to this store in the store manager
+     * @param shouldInitializeTable if true is provided the table gets initialized
      */
-    public CQLKeyColumnValueStore(final CQLStoreManager storeManager, final String tableName, final Configuration configuration, final Runnable closer) {
+    public CQLKeyColumnValueStore(final CQLStoreManager storeManager, final String tableName, final Configuration configuration, final Runnable closer, final Supplier<Boolean> shouldInitializeTable) {
         this.storeManager = storeManager;
         this.executorService = this.storeManager.getExecutorService();
         this.tableName = tableName;
@@ -152,7 +154,9 @@ public class CQLKeyColumnValueStore implements KeyColumnValueStore {
         this.session = this.storeManager.getSession();
         this.getter = new CQLColValGetter(storeManager.getMetaDataSchema(this.tableName));
 
-        initializeTable(this.session, this.storeManager.getKeyspaceName(), tableName, configuration);
+        if(shouldInitializeTable.get()) {
+            initializeTable(this.session, this.storeManager.getKeyspaceName(), tableName, configuration);
+        }
 
         // @formatter:off
         this.getSlice = this.session.prepare(select()
