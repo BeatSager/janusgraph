@@ -205,6 +205,40 @@ public class CQLStoreTest extends KeyColumnValueStoreTest {
         verify(session, times(1)).execute(any(Statement.class));
     }
 
+    @Test
+    public void testExistTableOpenDatabase() throws BackendException {
+        String someTableName = "foo";
+        Metadata metadata = mock(Metadata.class);
+        KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
+        when(keyspaceMetadata.getTable(someTableName)).thenReturn(mock(TableMetadata.class));
+        Session session = mock(Session.class);
+        when(cluster.getMetadata()).thenReturn(metadata);
+        when(metadata.getKeyspace(TEST_KEYSPACE_NAME)).thenReturn(keyspaceMetadata);
+        when(cluster.connect()).thenReturn(session);
+
+        mockManager.openDatabase(someTableName, null);
+
+        verify(cluster).connect();
+        verify(session, never()).execute(any(Statement.class));
+    }
+
+    @Test
+    public void testNewTableOpenDatabase() throws BackendException {
+        String someTableName = "foo";
+        Metadata metadata = mock(Metadata.class);
+        KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
+        when(keyspaceMetadata.getTable(someTableName)).thenReturn(null);
+        Session session = mock(Session.class);
+        when(cluster.getMetadata()).thenReturn(metadata);
+        when(metadata.getKeyspace(TEST_KEYSPACE_NAME)).thenReturn(keyspaceMetadata);
+        when(cluster.connect()).thenReturn(session);
+
+        mockManager.openDatabase(someTableName, null);
+
+        verify(cluster).connect();
+        verify(session, times(1)).execute(any(Statement.class));
+    }
+
     @Override
     public CQLStoreManager openStorageManagerForClearStorageTest() throws Exception {
         return openStorageManager(getBaseStorageConfiguration().set(GraphDatabaseConfiguration.DROP_ON_CLEAR, true));
